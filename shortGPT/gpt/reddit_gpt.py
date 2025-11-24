@@ -13,13 +13,21 @@ def generateRedditPostMetadata(title):
 
 
 def getInterestingRedditQuestion():
+    import time
     chat, system = gpt_utils.load_local_yaml_prompt('prompt_templates/reddit_generate_question.yaml')
-    return gpt_utils.llm_completion(chat_prompt=chat, system=system, temp=1.08)
+    # 添加时间戳和随机数来确保每次请求都不同，避免API缓存
+    unique_seed = f"Seed: {random.randint(10000, 99999)} | Timestamp: {int(time.time())}\n"
+    chat = unique_seed + chat
+    return gpt_utils.llm_completion(chat_prompt=chat, system=system, temp=1.5)
 
 def createRedditScript(question):
+    import time
     chat, system = gpt_utils.load_local_yaml_prompt('prompt_templates/reddit_generate_script.yaml')
     chat = chat.replace("<<QUESTION>>", question)
-    result = "Reddit, " + question +" "+gpt_utils.llm_completion(chat_prompt=chat, system=system, temp=1.08)
+    # 添加时间戳和随机数来确保每次脚本生成都不同
+    unique_seed = f"\nUnique ID: {random.randint(10000, 99999)}-{int(time.time())}\n"
+    chat = chat + unique_seed
+    result = "Reddit, " + question +" "+gpt_utils.llm_completion(chat_prompt=chat, system=system, temp=1.5)
     return result
     
 
