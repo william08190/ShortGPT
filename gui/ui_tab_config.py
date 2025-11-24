@@ -15,7 +15,7 @@ class ConfigUI(AbstractComponentUI):
         eleven_key = self.api_key_manager.get_api_key('ELEVENLABS_API_KEY')
         self.eleven_labs_api = ElevenLabsAPI(eleven_key) if eleven_key else None
 
-    def on_show(self, button_text, textbox, button):
+    def on_show(self, button_text):
         '''Show or hide the API key'''
         if button_text == I18n.t("show"):
             return gr.update(type="text"), gr.update(value=I18n.t("hide"))
