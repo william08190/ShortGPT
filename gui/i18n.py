@@ -6,8 +6,8 @@
 class I18n:
     """国际化翻译类"""
 
-    # 当前语言，默认英文
-    current_lang = "en"
+    # 当前语言，默认中文
+    current_lang = "zh"
 
     # 翻译字典
     translations = {
