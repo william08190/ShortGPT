@@ -31,9 +31,22 @@ def getRealisticness(text):
         attempts+=1
         try:
             result = gpt_utils.llm_completion(chat_prompt=chat, system=system, temp=1)
-            return json.loads(result)['score']
+            # 尝试直接解析JSON
+            try:
+                return json.loads(result)['score']
+            except:
+                # 如果失败，尝试从结果中提取JSON
+                import re
+                json_match = re.search(r'\{[^}]*"score"[^}]*\}', result)
+                if json_match:
+                    return json.loads(json_match.group())['score']
+                # 如果还是失败，尝试提取数字
+                score_match = re.search(r'["\'"]?score["\'"]?\s*[:=]\s*(\d+(?:\.\d+)?)', result)
+                if score_match:
+                    return float(score_match.group(1))
+                raise Exception(f"Cannot parse score from: {result[:100]}")
         except Exception as e:
-            print("Error in getRealisticness", e.args[0])
+            print("Error in getRealisticness", e.args[0] if e.args else str(e))
     raise Exception("LLM Failed to generate a realisticness score on the script")
 
 def getQuestionFromThread(text):
