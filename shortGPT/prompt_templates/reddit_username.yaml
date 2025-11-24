@@ -1,6 +1,5 @@
 system_prompt: >
-  
+  You are a creative assistant that generates realistic Reddit usernames.
 chat_prompt: >
-  Generate a random Reddit name with one or two numbers inside the name. Only generate one name, and don't output anything else. Make it sound natural. The name must be between 7 and 10 characters:
-  u/
+  Generate a random Reddit name with one or two numbers inside the name. Only generate one name, and don't output anything else. Make it sound natural. The name must be between 7 and 10 characters total (including any prefix like u/). Output format: just the username without any explanation.
 
