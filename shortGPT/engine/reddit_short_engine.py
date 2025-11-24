@@ -10,9 +10,10 @@ import os
 class RedditShortEngine(ContentShortEngine):
     # Mapping of variable names to database paths
     def __init__(self,voiceModule: VoiceModule, background_video_name: str, background_music_name: str,short_id="",
-                 num_images=None, watermark=None, language:Language = Language.ENGLISH):
+                 num_images=None, watermark=None, language:Language = Language.ENGLISH, custom_reddit_question=None):
         super().__init__(short_id=short_id, short_type="reddit_shorts", background_video_name=background_video_name, background_music_name=background_music_name,
                  num_images=num_images, watermark=watermark, language=language, voiceModule=voiceModule)
+        self.custom_reddit_question = custom_reddit_question
     
     def __generateRandomStory(self):
         question = reddit_gpt.getInterestingRedditQuestion()
@@ -36,10 +37,18 @@ class RedditShortEngine(ContentShortEngine):
         """
         Implements Abstract parent method to generate the script for the reddit short
         """
-        self.logger("Generating reddit question & entertaining story")
-        self._db_script, _ = self.__getRealisticStory(max_tries=1)
-        self._db_reddit_question = reddit_gpt.getQuestionFromThread(
-            self._db_script)
+        # 如果用户提供了自定义的Reddit问题，直接使用它
+        if self.custom_reddit_question:
+            self.logger(f"Using custom Reddit question: {self.custom_reddit_question}")
+            self._db_reddit_question = self.custom_reddit_question
+            # 基于真实问题生成脚本
+            self._db_script = reddit_gpt.createRedditScript(self.custom_reddit_question)
+        else:
+            # 否则使用AI生成随机问题
+            self.logger("Generating reddit question & entertaining story")
+            self._db_script, _ = self.__getRealisticStory(max_tries=1)
+            self._db_reddit_question = reddit_gpt.getQuestionFromThread(
+                self._db_script)
 
     def _prepareCustomAssets(self):
         """

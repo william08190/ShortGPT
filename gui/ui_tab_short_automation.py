@@ -16,12 +16,15 @@ from shortGPT.config.languages import (EDGE_TTS_VOICENAME_MAPPING,
                                        Language)
 from shortGPT.engine.facts_short_engine import FactsShortEngine
 from shortGPT.engine.reddit_short_engine import RedditShortEngine
+from shortGPT.utils.reddit_scraper import get_top_questions, fetch_hot_questions_from_subreddit
+
 class ShortAutomationUI(AbstractComponentUI):
     def __init__(self, shortGptUI: gr.Blocks):
         self.shortGptUI = shortGptUI
         self.embedHTML = '<div style="display: flex; overflow-x: auto; gap: 20px;">'
         self.progress_counter = 0
         self.short_automation = None
+        self.fetched_questions = []  # 存储获取到的Reddit问题原始数据
 
     def create_ui(self):
         with gr.Row(visible=False) as short_automation:
@@ -29,7 +32,39 @@ class ShortAutomationUI(AbstractComponentUI):
                 numShorts = gr.Number(label="Number of shorts", minimum=1, value=1)
                 short_type = gr.Radio(["Reddit Story shorts", "Historical Facts shorts", "Scientific Facts shorts", "Custom Facts shorts"], label="Type of shorts generated", value="Reddit Story shorts", interactive=True)
                 facts_subject = gr.Textbox(label="Write a subject for your facts (example: Football facts)", interactive=True, visible=False)
+
+                # Reddit问题来源选择
+                with gr.Column(visible=True) as reddit_question_options:
+                    reddit_source = gr.Radio(["AI Generated Question", "Real Reddit Question"], label="Reddit Question Source", value="AI Generated Question", interactive=True)
+                    with gr.Column(visible=False) as real_reddit_section:
+                        with gr.Row():
+                            reddit_subreddit = gr.Dropdown(["AskReddit", "NoStupidQuestions", "TooAfraidToAsk", "CasualConversation"], label="Subreddit", value="AskReddit", interactive=True)
+                            reddit_timefilter = gr.Dropdown(["hour", "day", "week", "month", "year"], label="Time Filter", value="day", interactive=True)
+                        fetch_questions_btn = gr.Button("🔍 Fetch Questions", size="sm")
+                        reddit_questions_radio = gr.Radio([], label="Select a Question", interactive=True, visible=False)
+                        reddit_questions_info = gr.HTML("<p style='color: gray;'>Click 'Fetch Questions' to load real Reddit questions</p>")
+
+                def toggle_reddit_source(source):
+                    return gr.update(visible=source == "Real Reddit Question")
+
+                reddit_source.change(toggle_reddit_source, [reddit_source], [real_reddit_section])
+
+                def fetch_reddit_questions(subreddit, timefilter):
+                    try:
+                        questions = get_top_questions(subreddit=subreddit, time_filter=timefilter, limit=20)
+                        if not questions:
+                            return gr.update(choices=[], visible=False), "<p style='color: red;'>No questions found. Try different filters.</p>"
+
+                        self.fetched_questions = questions  # 保存原始数据
+                        choices = [f"⬆️{q['upvotes']} 💬{q['num_comments']} | {q['title'][:80]}..." if len(q['title']) > 80 else f"⬆️{q['upvotes']} 💬{q['num_comments']} | {q['title']}" for q in questions]
+                        return gr.update(choices=choices, value=choices[0] if choices else None, visible=True), f"<p style='color: green;'>✓ Found {len(questions)} questions</p>"
+                    except Exception as e:
+                        return gr.update(choices=[], visible=False), f"<p style='color: red;'>Error: {str(e)}</p>"
+
+                fetch_questions_btn.click(fetch_reddit_questions, [reddit_subreddit, reddit_timefilter], [reddit_questions_radio, reddit_questions_info])
+
                 short_type.change(lambda x: gr.update(visible=x == "Custom Facts shorts"), [short_type], [facts_subject])
+                short_type.change(lambda x: gr.update(visible=x == "Reddit Story shorts"), [short_type], [reddit_question_options])
                 tts_engine = gr.Radio([AssetComponentsUtils.ELEVEN_TTS, AssetComponentsUtils.EDGE_TTS], label="Text to speech engine", value=AssetComponentsUtils.EDGE_TTS, interactive=True)
                 self.tts_engine = tts_engine.value
                 with gr.Column(visible=False) as eleven_tts:
@@ -72,11 +107,13 @@ class ShortAutomationUI(AbstractComponentUI):
                 AssetComponentsUtils.background_music_checkbox(),
                 facts_subject,
                 voice_eleven,
+                reddit_source,
+                reddit_questions_radio,
             ], outputs=[output, video_folder, generation_error])
         self.short_automation = short_automation
         return self.short_automation
 
-    def create_short(self, numShorts, short_type, tts_engine, language_eleven, language_edge, numImages, watermark, background_video_list, background_music_list, facts_subject, voice_eleven, progress=gr.Progress()):
+    def create_short(self, numShorts, short_type, tts_engine, language_eleven, language_edge, numImages, watermark, background_video_list, background_music_list, facts_subject, voice_eleven, reddit_source, reddit_questions_radio, progress=gr.Progress()):
         '''Creates a short'''
 
         try:
@@ -84,6 +121,21 @@ class ShortAutomationUI(AbstractComponentUI):
             numImages = int(numImages) if numImages else None
             background_videos = (background_video_list * ((numShorts // len(background_video_list)) + 1))[:numShorts]
             background_musics = (background_music_list * ((numShorts // len(background_music_list)) + 1))[:numShorts]
+
+            # 处理Reddit问题来源
+            custom_reddit_question = None
+            if short_type == "Reddit Story shorts" and reddit_source == "Real Reddit Question":
+                if reddit_questions_radio and self.fetched_questions:
+                    # 从选中的显示文本中提取实际问题
+                    # 格式: "⬆️X 💬Y | Question Title"
+                    selected_display = reddit_questions_radio
+                    # 找到对应的原始问题数据
+                    for q in self.fetched_questions:
+                        display_text = f"⬆️{q['upvotes']} 💬{q['num_comments']} | {q['title'][:80]}..." if len(q['title']) > 80 else f"⬆️{q['upvotes']} 💬{q['num_comments']} | {q['title']}"
+                        if display_text == selected_display:
+                            custom_reddit_question = q['title']
+                            break
+
             if tts_engine == AssetComponentsUtils.ELEVEN_TTS:
                 language = Language(language_eleven.lower().capitalize())
                 voice_module = ElevenLabsVoiceModule(ApiKeyManager.get_api_key('ELEVENLABS_API_KEY'), voice_eleven, checkElevenCredits=True)
@@ -92,7 +144,7 @@ class ShortAutomationUI(AbstractComponentUI):
                 voice_module = EdgeTTSVoiceModule(EDGE_TTS_VOICENAME_MAPPING[language]['male'])
             for i in range(numShorts):
                 shortEngine = self.create_short_engine(short_type=short_type, voice_module=voice_module, language=language, numImages=numImages, watermark=watermark,
-                                                       background_video=background_videos[i], background_music=background_musics[i], facts_subject=facts_subject)
+                                                       background_video=background_videos[i], background_music=background_musics[i], facts_subject=facts_subject, custom_reddit_question=custom_reddit_question)
                 num_steps = shortEngine.get_total_steps()
 
                 def logger(prog_str):
@@ -152,9 +204,9 @@ class ShortAutomationUI(AbstractComponentUI):
             raise gr.Error("ELEVENLABS_API_KEY API key is missing. Please go to the config tab and enter the API key.")
         return gr.update(visible=False)
 
-    def create_short_engine(self, short_type, voice_module, language, numImages, watermark, background_video, background_music, facts_subject):
+    def create_short_engine(self, short_type, voice_module, language, numImages, watermark, background_video, background_music, facts_subject, custom_reddit_question=None):
         if short_type == "Reddit Story shorts":
-            return RedditShortEngine(voice_module, background_video_name=background_video, background_music_name=background_music, num_images=numImages, watermark=watermark, language=language)
+            return RedditShortEngine(voice_module, background_video_name=background_video, background_music_name=background_music, num_images=numImages, watermark=watermark, language=language, custom_reddit_question=custom_reddit_question)
         if "fact" in short_type.lower():
             if "custom" in short_type.lower():
                 facts_subject = facts_subject
