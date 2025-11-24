@@ -124,7 +124,17 @@ def llm_completion(chat_prompt="", system="", temp=0.7, max_tokens=2000, remove_
             return text
         except Exception as oops:
             retry += 1
-            print('Error communicating with OpenAI:', oops)
-            error = str(oops)
-            sleep(1)
+            error_str = str(oops)
+            print(f'Error communicating with LLM (attempt {retry}/{max_retry}):', oops)
+            error = error_str
+
+            # 检测速率限制错误 (429)
+            if 'Error code: 429' in error_str or '请求数限制' in error_str or 'rate limit' in error_str.lower():
+                # 对于速率限制，使用指数退避策略
+                wait_time = min(60, 5 * (2 ** (retry - 1)))  # 5秒, 10秒, 20秒, 40秒, 60秒
+                print(f'Rate limit detected. Waiting {wait_time} seconds before retry...')
+                sleep(wait_time)
+            else:
+                # 对于其他错误，等待较短时间
+                sleep(1)
     raise Exception(f"Error communicating with LLM Endpoint Completion errored more than error: {error}")
