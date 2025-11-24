@@ -72,8 +72,19 @@ from openai import OpenAI
 def llm_completion(chat_prompt="", system="", temp=0.7, max_tokens=2000, remove_nl=True, conversation=None):
     openai_key= ApiKeyManager.get_api_key("OPENAI_API_KEY")
     gemini_key = ApiKeyManager.get_api_key("GEMINI_API_KEY")
-    if gemini_key:
-        client = OpenAI( 
+    custom_base_url = ApiKeyManager.get_api_key("CUSTOM_BASE_URL")
+
+    # 优先使用自定义API（支持第三方代理）
+    if openai_key and custom_base_url:
+        client = OpenAI(
+            api_key=openai_key,
+            base_url=custom_base_url
+        )
+        # 从环境变量读取模型名称，默认使用claude-haiku
+        custom_model = ApiKeyManager.get_api_key("CUSTOM_MODEL")
+        model = custom_model if custom_model else "claude-haiku-4-5-20251001"
+    elif gemini_key:
+        client = OpenAI(
             api_key=gemini_key,
             base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
         )
