@@ -31,17 +31,20 @@ def getRealisticness(text):
         attempts+=1
         try:
             result = gpt_utils.llm_completion(chat_prompt=chat, system=system, temp=1)
+            # 移除可能的markdown代码块标记
+            import re
+            result_cleaned = re.sub(r'```(?:json)?\s*|\s*```', '', result)
+
             # 尝试直接解析JSON
             try:
-                return json.loads(result)['score']
+                return json.loads(result_cleaned)['score']
             except:
-                # 如果失败，尝试从结果中提取JSON
-                import re
-                json_match = re.search(r'\{[^}]*"score"[^}]*\}', result)
+                # 如果失败，尝试从结果中提取JSON对象
+                json_match = re.search(r'\{[^{}]*"score"[^{}]*\}', result_cleaned)
                 if json_match:
                     return json.loads(json_match.group())['score']
                 # 如果还是失败，尝试提取数字
-                score_match = re.search(r'["\'"]?score["\'"]?\s*[:=]\s*(\d+(?:\.\d+)?)', result)
+                score_match = re.search(r'["\'"]?score["\'"]?\s*[:=]\s*(\d+(?:\.\d+)?)', result_cleaned)
                 if score_match:
                     return float(score_match.group(1))
                 raise Exception(f"Cannot parse score from: {result[:100]}")
