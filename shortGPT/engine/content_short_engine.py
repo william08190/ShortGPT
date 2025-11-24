@@ -141,7 +141,7 @@ class ContentShortEngine(AbstractContentEngine):
                 videoEditor.addEditingStep(caption_type, {'text': text.upper(),
                                                           'set_time_start': timing[0],
                                                           'set_time_end': timing[1]})
-            if self._db_num_images:
+            if self._db_num_images and self._db_timed_image_urls:
                 for timing, image_url in self._db_timed_image_urls:
                     videoEditor.addEditingStep(EditingStep.SHOW_IMAGE, {'url': image_url,
                                                                         'set_time_start': timing[0],
