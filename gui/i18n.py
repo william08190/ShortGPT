@@ -258,6 +258,92 @@ class I18n:
             "en": "Asset Link/Path",
             "zh": "素材链接/路径"
         },
+
+        # 配置页面
+        "config_tab": {
+            "en": "Config",
+            "zh": "配置"
+        },
+        "show": {
+            "en": "Show",
+            "zh": "显示"
+        },
+        "hide": {
+            "en": "Hide",
+            "zh": "隐藏"
+        },
+        "characters_remaining": {
+            "en": "CHARACTERS REMAINING",
+            "zh": "剩余字符数"
+        },
+        "keys_saved": {
+            "en": "Keys Saved !",
+            "zh": "密钥已保存！"
+        },
+
+        # 素材库页面
+        "asset_library_tab": {
+            "en": "Asset library",
+            "zh": "素材库"
+        },
+        "add_assets_accordion": {
+            "en": "➕ Add your own local assets or from Youtube",
+            "zh": "➕ 添加本地素材或从Youtube添加"
+        },
+        "add_youtube_asset": {
+            "en": "Add youtube video / audio",
+            "zh": "添加Youtube视频/音频"
+        },
+        "add_local_asset": {
+            "en": "Add local video / audio / image    ",
+            "zh": "添加本地视频/音频/图片    "
+        },
+        "name_required": {
+            "en": "Name (required)",
+            "zh": "名称（必填）"
+        },
+        "type": {
+            "en": "Type",
+            "zh": "类型"
+        },
+        "url_youtube": {
+            "en": "URL (https://youtube.com/xyz)",
+            "zh": "链接 (https://youtube.com/xyz)"
+        },
+        "add_button": {
+            "en": "ADD",
+            "zh": "添加"
+        },
+        "preview": {
+            "en": "Preview",
+            "zh": "预览"
+        },
+        "delete_button": {
+            "en": "🗑️ Delete",
+            "zh": "🗑️ 删除"
+        },
+        "delete_asset": {
+            "en": "🗑️ Delete {}",
+            "zh": "🗑️ 删除 {}"
+        },
+
+        # 素材库错误消息
+        "error_invalid_asset_name": {
+            "en": "Invalid asset name. Please provide a valid name that you will recognize (Only use letters and numbers)",
+            "zh": "无效的素材名称。请提供一个你能识别的有效名称（仅使用字母和数字）"
+        },
+        "error_invalid_youtube_url": {
+            "en": "Invalid YouTube URL. Please provide a valid URL.",
+            "zh": "无效的YouTube链接。请提供有效的链接。"
+        },
+        "error_asset_exists": {
+            "en": "An asset already exists with this name, please choose a different name.",
+            "zh": "已存在同名素材，请选择不同的名称。"
+        },
+        "error_file_not_exist": {
+            "en": "The file does not exist at the given path.",
+            "zh": "指定路径的文件不存在。"
+        },
     }
 
     @classmethod

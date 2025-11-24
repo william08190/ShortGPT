@@ -6,6 +6,7 @@ import gradio as gr
 
 from gui.asset_components import AssetComponentsUtils
 from gui.ui_abstract_component import AbstractComponentUI
+from gui.i18n import I18n
 from shortGPT.config.asset_db import AssetDatabase, AssetType
 
 
@@ -15,25 +16,25 @@ class AssetLibrary(AbstractComponentUI):
 
     def create_ui(self):
         '''Create the asset library UI'''
-        with gr.Tab("Asset library") as asset_library_ui:
+        with gr.Tab(I18n.t("asset_library_tab")) as asset_library_ui:
             with gr.Column():
-                with gr.Accordion("➕ Add your own local assets or from Youtube", open=False) as accordion:
-                    remote = "Add youtube video / audio"
-                    local = "Add local video / audio / image    "
+                with gr.Accordion(I18n.t("add_assets_accordion"), open=False) as accordion:
+                    remote = I18n.t("add_youtube_asset")
+                    local = I18n.t("add_local_asset")
                     assetFlows = gr.Radio([remote, local], label="", value=remote)
                     with gr.Column(visible=True) as youtubeFlow:
-                        asset_name = gr.Textbox(label="Name (required)")
-                        asset_type = gr.Radio([AssetType.BACKGROUND_VIDEO.value, AssetType.BACKGROUND_MUSIC.value,], value=AssetType.BACKGROUND_VIDEO.value, label="Type")
-                        youtube_url = gr.Textbox(label="URL (https://youtube.com/xyz)")
-                        add_youtube_link = gr.Button("ADD")
+                        asset_name = gr.Textbox(label=I18n.t("name_required"))
+                        asset_type = gr.Radio([AssetType.BACKGROUND_VIDEO.value, AssetType.BACKGROUND_MUSIC.value,], value=AssetType.BACKGROUND_VIDEO.value, label=I18n.t("type"))
+                        youtube_url = gr.Textbox(label=I18n.t("url_youtube"))
+                        add_youtube_link = gr.Button(I18n.t("add_button"))
 
                     with gr.Column(visible=False) as localFileFlow:
-                        local_upload_name = gr.Textbox(label="Name (required)")
-                        upload_type = gr.Radio([AssetType.BACKGROUND_VIDEO.value, AssetType.BACKGROUND_MUSIC.value, AssetType.IMAGE.value], value="background video", interactive=True, label="Type")
+                        local_upload_name = gr.Textbox(label=I18n.t("name_required"))
+                        upload_type = gr.Radio([AssetType.BACKGROUND_VIDEO.value, AssetType.BACKGROUND_MUSIC.value, AssetType.IMAGE.value], value="background video", interactive=True, label=I18n.t("type"))
                         video_upload = gr.Video(visible=True, sources="upload", interactive=True)
                         audio_upload = gr.Audio(visible=False, sources="upload", type="filepath", interactive=True)
                         image_upload = gr.Image(visible=False, sources="upload", type="filepath", interactive=True)
-                        upload_button = gr.Button("ADD")
+                        upload_button = gr.Button(I18n.t("add_button"))
                         upload_type.change(lambda x: (gr.update(visible='video' in x),
                                                       gr.update(visible=any(type in x for type in ['audio', 'music'])),
                                                       gr.update(visible=x == 'image')),
@@ -42,11 +43,11 @@ class AssetLibrary(AbstractComponentUI):
                 with gr.Row():
                     with gr.Column(scale=3):
                         asset_dataframe_ui = gr.Dataframe(self.__fulfill_df, interactive=False)
-                        video_choise = gr.Radio(["background video", "background music"], value="background video", label="Type")
+                        video_choise = gr.Radio(["background video", "background music"], value="background video", label=I18n.t("type"))
                     with gr.Column(scale=2):
-                        gr.Markdown("Preview")
+                        gr.Markdown(I18n.t("preview"))
                         asset_preview_ui = gr.HTML(self.__get_first_preview)
-                        delete_button = gr.Button("🗑️ Delete", scale=0, variant="primary")
+                        delete_button = gr.Button(I18n.t("delete_button"), scale=0, variant="primary")
                         delete_button.click(self.__delete_clicked, [delete_button], [asset_dataframe_ui, asset_preview_ui, delete_button, AssetComponentsUtils.background_video_checkbox(), AssetComponentsUtils.background_music_checkbox()])
                         asset_dataframe_ui.select(self.__preview_asset, [asset_dataframe_ui], [asset_preview_ui, delete_button])
 
@@ -64,23 +65,23 @@ class AssetLibrary(AbstractComponentUI):
 
     def __verify_youtube_asset_inputs(self, asset_name, yt_url, type):
         if not asset_name or not re.match("^[A-Za-z0-9 _-]*$", asset_name):
-            raise gr.Error('Invalid asset name. Please provide a valid name that you will recognize (Only use letters and numbers)')
+            raise gr.Error(I18n.t('error_invalid_asset_name'))
         if not yt_url.startswith("https://youtube.com/") and not yt_url.startswith("https://www.youtube.com/"):
-            raise gr.Error('Invalid YouTube URL. Please provide a valid URL.')
+            raise gr.Error(I18n.t('error_invalid_youtube_url'))
         if AssetDatabase.asset_exists(asset_name):
-            raise gr.Error('An asset already exists with this name, please choose a different name.')
+            raise gr.Error(I18n.t('error_asset_exists'))
 
     def __validate_asset_name(self, asset_name):
         '''Validate asset name'''
         if not asset_name or not re.match("^[A-Za-z0-9 _-]*$", asset_name):
-            raise gr.Error('Invalid asset name. Please provide a valid name that you will recognize (Only use letters and numbers)')
+            raise gr.Error(I18n.t('error_invalid_asset_name'))
         if AssetDatabase.asset_exists(asset_name):
-            raise gr.Error('An asset already exists with this name, please choose a different name.')
+            raise gr.Error(I18n.t('error_asset_exists'))
 
     def __validate_youtube_url(self, yt_url):
         '''Validate YouTube URL'''
         if not yt_url.startswith("https://youtube.com/") and not yt_url.startswith("https://www.youtube.com/"):
-            raise gr.Error('Invalid YouTube URL. Please provide a valid URL.')
+            raise gr.Error(I18n.t('error_invalid_youtube_url'))
 
     def __verify_and_add_youtube_asset(self, asset_name, yt_url, type):
         '''Verify and add a youtube asset to the database'''
@@ -93,7 +94,7 @@ class AssetLibrary(AbstractComponentUI):
         AssetDatabase.add_remote_asset(asset_name, AssetType(type), yt_url)
         latest_df = AssetDatabase.get_df()
         return gr.DataFrame.update(value=latest_df), gr.update(value=self.__get_asset_embed(latest_df, 0)),\
-            gr.update(value=f"🗑️ Delete {latest_df.iloc[0]['name']}"),\
+            gr.update(value=I18n.t("delete_asset", latest_df.iloc[0]['name'])),\
             gr.update(open=False),\
             gr.update(choices=AssetComponentsUtils.getBackgroundVideoChoices(), interactive=True),\
             gr.update(choices=AssetComponentsUtils.getBackgroundMusicChoices(), interactive=True)
@@ -104,25 +105,32 @@ class AssetLibrary(AbstractComponentUI):
 
     def __delete_clicked(self, button_name):
         '''Delete an asset'''
-        asset_name = button_name.split("🗑️ Delete ")[-1]
+        # 从按钮文本中提取素材名称，支持中英文
+        if "Delete " in button_name:
+            asset_name = button_name.split("Delete ")[-1]
+        elif "删除 " in button_name:
+            asset_name = button_name.split("删除 ")[-1]
+        else:
+            asset_name = button_name.split("🗑️ ")[-1]
+
         AssetDatabase.remove_asset(asset_name)
         data = AssetDatabase.get_df()
         if len(data) > 0:
             return gr.update(value=data),\
                 gr.update(value=self.__get_asset_embed(data, 0)),\
-                gr.update(value=f"🗑️ Delete {data.iloc[0]['name']}"),\
+                gr.update(value=I18n.t("delete_asset", data.iloc[0]['name'])),\
                 gr.update(choices=AssetComponentsUtils.getBackgroundVideoChoices(), interactive=True),\
                 gr.update(choices=AssetComponentsUtils.getBackgroundMusicChoices(), interactive=True)
         return gr.Dataframe.update(value=data),\
             gr.update(visible=True),\
-            gr.update(value="🗑️ Delete"),\
+            gr.update(value=I18n.t("delete_button")),\
             gr.update(choices=AssetComponentsUtils.getBackgroundVideoChoices(), interactive=True),\
             gr.update(choices=AssetComponentsUtils.getBackgroundMusicChoices(), interactive=True)
 
     def __preview_asset(self, data, evt: gr.SelectData):
         '''Preview the asset with the given name'''
         html_embed = self.__get_asset_embed(data, evt.index[0])
-        return gr.update(value=html_embed), gr.update(value=f"🗑️ Delete {data.iloc[evt.index[0]]['name']}")
+        return gr.update(value=html_embed), gr.update(value=I18n.t("delete_asset", data.iloc[evt.index[0]]['name']))
 
     def __get_asset_embed(self, data, row):
         '''Get the embed html for the asset at the given row'''
@@ -174,7 +182,7 @@ class AssetLibrary(AbstractComponentUI):
             AssetType.IMAGE.value: image_path
         }
         if not os.path.exists(path_dict[upload_type]):
-            raise gr.Error(f'The file does not exist at the given path.')
+            raise gr.Error(I18n.t('error_file_not_exist'))
         return self.__upload_local_asset(upload_type, upload_name, video_path, audio_path, image_path)
 
     def __upload_local_asset(self, upload_type, upload_name, video_path, audio_path, image_path):
@@ -191,7 +199,7 @@ class AssetLibrary(AbstractComponentUI):
         AssetDatabase.add_local_asset(upload_name, AssetType(upload_type), new_path)
         latest_df = AssetDatabase.get_df()
         return gr.DataFrame.update(value=latest_df), gr.update(value=self.__get_asset_embed(latest_df, 0)),\
-            gr.update(value=f"🗑️ Delete {latest_df.iloc[0]['name']}"),\
+            gr.update(value=I18n.t("delete_asset", latest_df.iloc[0]['name'])),\
             gr.update(open=False),\
             gr.update(choices=AssetComponentsUtils.getBackgroundVideoChoices(), interactive=True),\
             gr.update(choices=AssetComponentsUtils.getBackgroundMusicChoices(), interactive=True)
