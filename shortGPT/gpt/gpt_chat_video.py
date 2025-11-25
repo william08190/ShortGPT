@@ -7,7 +7,12 @@ def generateScript(script_description, language):
     while not ('script' in out and out['script']):
         try:
             result = gpt_utils.llm_completion(chat_prompt=chat, system=system, temp=1)
-            out = json.loads(result)
+            # Extract JSON from markdown code blocks if present
+            json_str = gpt_utils.extract_biggest_json(result)
+            if json_str:
+                out = json.loads(json_str)
+            else:
+                out = json.loads(result)
         except Exception as e:
             print(e, "Difficulty parsing the output in gpt_chat_video.generateScript")
     return out['script']
@@ -20,7 +25,12 @@ def correctScript(script, correction):
     while not ('script' in out and out['script']):
         try:
             result = gpt_utils.llm_completion(chat_prompt=chat, system=system, temp=1)
-            out = json.loads(result)
+            # Extract JSON from markdown code blocks if present
+            json_str = gpt_utils.extract_biggest_json(result)
+            if json_str:
+                out = json.loads(json_str)
+            else:
+                out = json.loads(result)
         except Exception as e:
-            print("Difficulty parsing the output in gpt_chat_video.generateScript")
+            print(e, "Difficulty parsing the output in gpt_chat_video.correctScript")
     return out['script']
