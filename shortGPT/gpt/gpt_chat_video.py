@@ -7,12 +7,18 @@ def generateScript(script_description, language):
     while not ('script' in out and out['script']):
         try:
             result = gpt_utils.llm_completion(chat_prompt=chat, system=system, temp=1)
-            # Extract JSON from markdown code blocks if present
-            json_str = gpt_utils.extract_biggest_json(result)
-            if json_str:
-                out = json.loads(json_str)
-            else:
-                out = json.loads(result)
+            # Remove markdown code blocks if present
+            cleaned_result = result.strip()
+            if cleaned_result.startswith('```'):
+                # Remove opening ```json or ```
+                lines = cleaned_result.split('\n')
+                lines = lines[1:]  # Skip first line with ```
+                # Remove closing ```
+                if lines and lines[-1].strip() == '```':
+                    lines = lines[:-1]
+                cleaned_result = '\n'.join(lines).strip()
+
+            out = json.loads(cleaned_result)
         except Exception as e:
             print(e, "Difficulty parsing the output in gpt_chat_video.generateScript")
     return out['script']
@@ -25,12 +31,18 @@ def correctScript(script, correction):
     while not ('script' in out and out['script']):
         try:
             result = gpt_utils.llm_completion(chat_prompt=chat, system=system, temp=1)
-            # Extract JSON from markdown code blocks if present
-            json_str = gpt_utils.extract_biggest_json(result)
-            if json_str:
-                out = json.loads(json_str)
-            else:
-                out = json.loads(result)
+            # Remove markdown code blocks if present
+            cleaned_result = result.strip()
+            if cleaned_result.startswith('```'):
+                # Remove opening ```json or ```
+                lines = cleaned_result.split('\n')
+                lines = lines[1:]  # Skip first line with ```
+                # Remove closing ```
+                if lines and lines[-1].strip() == '```':
+                    lines = lines[:-1]
+                cleaned_result = '\n'.join(lines).strip()
+
+            out = json.loads(cleaned_result)
         except Exception as e:
             print(e, "Difficulty parsing the output in gpt_chat_video.correctScript")
     return out['script']
