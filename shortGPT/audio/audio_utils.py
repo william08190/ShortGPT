@@ -70,11 +70,25 @@ def ChunkForAudio(alltext, chunk_size=2500):
 
 
 def audioToText(filename, model_size="base"):
+    import os
+    import sys
     from whisper_timestamped import load_model, transcribe_timestamped
+
+    # Disable tqdm progress bar to avoid stderr issues in Gradio
+    os.environ['TQDM_DISABLE'] = '1'
+
     global WHISPER_MODEL
     if (WHISPER_MODEL == None):
         WHISPER_MODEL = load_model(model_size)
-    gen = transcribe_timestamped(WHISPER_MODEL, filename, verbose=False, fp16=False)
+
+    # Redirect stderr to avoid OSError 22 in Gradio environment
+    old_stderr = sys.stderr
+    try:
+        sys.stderr = open(os.devnull, 'w')
+        gen = transcribe_timestamped(WHISPER_MODEL, filename, verbose=False, fp16=False)
+    finally:
+        sys.stderr = old_stderr
+
     return gen
 
 
