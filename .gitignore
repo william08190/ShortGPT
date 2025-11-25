@@ -30,3 +30,10 @@ schema.json
 video.mp4
 Untitled-1.ipynbNUL
 nul
+
+# Temporary video files
+*TEMP_MPY*.mp4
+rendered_video*.mp4
+
+# Test files
+test_*.py
