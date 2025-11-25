@@ -10,13 +10,11 @@ def generateScript(script_description, language):
             # Remove markdown code blocks if present
             cleaned_result = result.strip()
             if cleaned_result.startswith('```'):
-                # Remove opening ```json or ```
-                lines = cleaned_result.split('\n')
-                lines = lines[1:]  # Skip first line with ```
-                # Remove closing ```
-                if lines and lines[-1].strip() == '```':
-                    lines = lines[:-1]
-                cleaned_result = '\n'.join(lines).strip()
+                # Find the first { and last }
+                start_idx = cleaned_result.find('{')
+                end_idx = cleaned_result.rfind('}')
+                if start_idx != -1 and end_idx != -1:
+                    cleaned_result = cleaned_result[start_idx:end_idx+1]
 
             out = json.loads(cleaned_result)
         except Exception as e:
@@ -34,13 +32,11 @@ def correctScript(script, correction):
             # Remove markdown code blocks if present
             cleaned_result = result.strip()
             if cleaned_result.startswith('```'):
-                # Remove opening ```json or ```
-                lines = cleaned_result.split('\n')
-                lines = lines[1:]  # Skip first line with ```
-                # Remove closing ```
-                if lines and lines[-1].strip() == '```':
-                    lines = lines[:-1]
-                cleaned_result = '\n'.join(lines).strip()
+                # Find the first { and last }
+                start_idx = cleaned_result.find('{')
+                end_idx = cleaned_result.rfind('}')
+                if start_idx != -1 and end_idx != -1:
+                    cleaned_result = cleaned_result[start_idx:end_idx+1]
 
             out = json.loads(cleaned_result)
         except Exception as e:
